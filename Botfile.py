@@ -1,26 +1,38 @@
 import logging
+from emoji import emojize
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import Settings
-from random import randint
+from random import randint, choice
+from glob import glob
 
 logging.basicConfig(filename='bot.log', level=logging.INFO)
 
 def greet_user(update, context):
     print('Вызван \start')
+    if 'emoji' in context.user_data:
+        del context.user_data['emoji'] 
     update.message.reply_text('Привет, пользователь! Ты вызвал команду /start')
 
 def talk_to_me(update, context):
     text = update.message.text
     print(text)
-    update.message.reply_text(text)
+    context.user_data['emoji'] = get_smile(context.user_data)
+    update.message.reply_text(f'{text} {context.user_data["emoji"]}')
+
+def get_smile(user_data): # функция присваивает пользователю случайный смайлик из списка и потом возвращает только его (до перезапуска бота)
+    print(user_data)
+    if 'emoji' not in user_data: # user_data это встроенный словарь с информацией о юзере, который обновляется при перезапуске бота
+        smile = choice(Settings.USER_EMOJI)
+        return emojize(smile, language='alias') # language='alias' позволяет называть смайлики по текстовому псевдониму с двоеточием
+    return user_data['emoji']
 
 def count_words(update, context):
     text = update.message.text
     print(text)
-    if len(text.split()[1:]) == 0:
+    if len(context.args) == 0:
         update.message.reply_text('Вы забыли текст :)')
     else:
-        update.message.reply_text(f'количество слов: {len(text.split()[1:])}')
+        update.message.reply_text(f'количество слов: {len(context.args)}')
 
 def cities_game(update, context):
     cities_list = {
@@ -46,9 +58,10 @@ def cities_game(update, context):
     del cities_list[ans_word[0]][ans_word]
 
 def calc(update, context):
-    s = update.message.text
-    try: 
-        value = list(str(s).replace(' ', '')[5:]) 
+    try:
+        value = context.args
+        # в переменную context.args в виде списка записывается всё, что идёт после пробела после команды с удаленными лишним пробелами:
+        # т.е. если ввести "/calc 143 +  35", то там будет ['143', '+', '35']
         # убираем из строки /команду и пробелы, выделяем каждый символ
         # но таким методом многоцифорные числа будут набором отдельных чисел (143 -> '1', '4', '3'), их надо соединить обратно
             
@@ -102,6 +115,11 @@ def calc(update, context):
     except:
         return update.message.reply_text('Кажется, где-то ошибка :(')    
 
+def send_cat(update, context):
+    img = (choice(glob('images/cat*.jp*g'))) # "*" ознаачает, что на её месте в этой функции может стоять что угодно
+    chat_id = update.effective_chat.id # получаем id текущего чата с пользователем, чтобы отправить туда картинку
+    context.bot.send_photo(chat_id=chat_id, photo=open(img, 'rb'))
+
 def main():
     bot = Updater(Settings.API_KEY)
 
@@ -110,6 +128,7 @@ def main():
     dp.add_handler(CommandHandler('wordcount', count_words))
     dp.add_handler(CommandHandler('cities', cities_game))
     dp.add_handler(CommandHandler('calc', calc))
+    dp.add_handler(CommandHandler('cat', send_cat))
     dp.add_handler(MessageHandler(Filters.text, talk_to_me)) # попробовать добавить MessageHandler в cities_game + стоп-слово для игры, например "Стоп"
 
     logging.info('Bot started')
