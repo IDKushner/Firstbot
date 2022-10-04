@@ -34,28 +34,36 @@ def count_words(update, context):
     else:
         update.message.reply_text(f'количество слов: {len(context.args)}')
 
-def cities_game(update, context):
+def cities_game(update, context): # Непонятно почему не работает :(
     cities_list = {
         'А': ['Алматы', 'Астана', 'Альтаир'], 
         'Б': ['Брест', 'Белгород', 'Белокаменск'], 
         'В': ['Воронеж', 'Волоколамск', 'Выхино']
         }
-    word = update.message.text
+    unused_cities = cities_list.copy()
+    used_cities = []
+    word = context.args[0]
     print(word)
+    
     start_letter = word[0].upper()
     letter = word[-1].upper()
 
-    if letter not in list(cities_list.keys()):
-        update.message.reply_text('Извини, я больше не знаю слов на эту букву :(')
+    if word in used_cities:
+        update.message.reply_text('Этот город уже был. Введи новый')
     else:
-        if start_letter in cities_list:
-             if word in cities_list[start_letter]:
-                del cities_list[start_letter][word]
-                
-    list_of_cities = cities_list[letter]
-    ans_word = list_of_cities[randint(0, len(list_of_cities) - 1)]
-    update.message.reply_text(f'{ans_word}. Тебе на {ans_word[-1].upper()}')
-    del cities_list[ans_word[0]][ans_word]
+        if word in unused_cities[start_letter]:
+            used_cities.append(unused_cities[start_letter][word])
+            print(used_cities) #!!
+            del unused_cities[start_letter][word]
+            print(unused_cities) #!!
+
+    if len(unused_cities[letter]) == 0:
+        update.message.reply_text('Извини, я больше не знаю слов на эту букву :(') 
+    else:           
+        cities = unused_cities[letter]
+        ans_word = cities[randint(0, len(cities) - 1)]
+        update.message.reply_text(f'{ans_word}. Тебе на {ans_word[-1].upper()}')
+        del unused_cities[ans_word[0]][ans_word]
 
 def calc(update, context):
     try:
