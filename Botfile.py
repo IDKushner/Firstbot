@@ -2,25 +2,34 @@ import logging
 from emoji import emojize
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import Settings
-from random import randint, choice
+from random import choice
 from glob import glob
+from telegram import ReplyKeyboardMarkup
 
 logging.basicConfig(filename='bot.log', level=logging.INFO)
+
+def main_keyboard():
+    return ReplyKeyboardMarkup([['Котик!']])
 
 def greet_user(update, context):
     print('Вызван \start')
     if 'emoji' in context.user_data:
         del context.user_data['emoji'] 
-    update.message.reply_text('Привет, пользователь! Ты вызвал команду /start')
+    update.message.reply_text(
+        'Привет, пользователь! Ты вызвал команду /start',
+        reply_markup=main_keyboard()
+        )
 
 def talk_to_me(update, context):
     text = update.message.text
     print(text)
     context.user_data['emoji'] = get_smile(context.user_data)
-    update.message.reply_text(f'{text} {context.user_data["emoji"]}')
+    update.message.reply_text(
+        f'{text} {context.user_data["emoji"]}', 
+        reply_markup=main_keyboard()
+        )
 
 def get_smile(user_data): # функция присваивает пользователю случайный смайлик из списка и потом возвращает только его (до перезапуска бота)
-    print(user_data)
     if 'emoji' not in user_data: # user_data это встроенный словарь с информацией о юзере, который обновляется при перезапуске бота
         smile = choice(Settings.USER_EMOJI)
         return emojize(smile, language='alias') # language='alias' позволяет называть смайлики по текстовому псевдониму с двоеточием
@@ -30,9 +39,15 @@ def count_words(update, context):
     text = update.message.text
     print(text)
     if len(context.args) == 0:
-        update.message.reply_text('Вы забыли текст :)')
+        update.message.reply_text(
+            'Вы забыли текст :)',
+            reply_markup=main_keyboard()
+            )
     else:
-        update.message.reply_text(f'количество слов: {len(context.args)}')
+        update.message.reply_text(
+            f'количество слов: {len(context.args)}',
+            reply_markup=main_keyboard()
+            )
 
 def cities_game(update, context): # Непонятно почему не работает :(
     cities_list = {
@@ -61,7 +76,7 @@ def cities_game(update, context): # Непонятно почему не раб�
         update.message.reply_text('Извини, я больше не знаю слов на эту букву :(') 
     else:           
         cities = unused_cities[letter]
-        ans_word = cities[randint(0, len(cities) - 1)]
+        ans_word = choice(cities)
         update.message.reply_text(f'{ans_word}. Тебе на {ans_word[-1].upper()}')
         del unused_cities[ans_word[0]][ans_word]
 
@@ -137,6 +152,7 @@ def main():
     dp.add_handler(CommandHandler('cities', cities_game))
     dp.add_handler(CommandHandler('calc', calc))
     dp.add_handler(CommandHandler('cat', send_cat))
+    dp.add_handler(MessageHandler(Filters.regex('^(Котик!)$'), send_cat))
     dp.add_handler(MessageHandler(Filters.text, talk_to_me)) # попробовать добавить MessageHandler в cities_game + стоп-слово для игры, например "Стоп"
 
     logging.info('Bot started')
