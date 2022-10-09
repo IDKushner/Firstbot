@@ -1,4 +1,6 @@
 from utils import *
+from glob import glob
+import os
 
 def greet_user(update, context):
     print('Вызван \start')
@@ -73,8 +75,6 @@ def calc(update, context):
         value = context.args
         # в переменную context.args в виде списка записывается всё, что идёт после пробела после команды с удаленными лишним пробелами:
         # т.е. если ввести "/calc 143 +  35", то там будет ['143', '+', '35']
-        # убираем из строки /команду и пробелы, выделяем каждый символ
-        # но таким методом многоцифорные числа будут набором отдельных чисел (143 -> '1', '4', '3'), их надо соединить обратно
             
         temp = [] 
         s = ''
@@ -125,3 +125,20 @@ def calc(update, context):
         return update.message.reply_text('На ноль делить нельзя!')
     except:
         return update.message.reply_text('Кажется, где-то ошибка :(')
+
+def check_user_photo(update, context):
+    update.message.reply_text("Обрабатываю фото")
+    os.makedirs('downloads', exist_ok=True)
+    photo_file = context.bot.getFile(update.message.photo[-1].file_id)
+    filename = os.path.join('downloads', f'{photo_file.file_id}.jpg')
+    photo_file.download(filename)
+    update.message.reply_text("Файл сохранен")
+    if has_object_on_image(filename, 'dog'):
+        # посколько мы добавили этой ф-ции 2й параметр, нужно теперь добавлять, что на картинке надо найти/заставить пользователя это задавать
+        # проверить завтра можно ли создать а потом удалить MessageHandler(Filters.text), чтобы передать название объекта в эту функцию
+        update.message.reply_text("Обнаружен объект, добавляю в библиотеку.")
+        new_filename = os.path.join('images', f'cat_{photo_file.file_id}.jpg')
+        os.rename(filename, new_filename)
+    else:
+        os.remove(filename)
+        update.message.reply_text("Тревога, объект не обнаружен!")
