@@ -7,7 +7,9 @@ from emoji import emojize
 import Settings
 
 def main_keyboard():
-    return ReplyKeyboardMarkup([['Котик!']])
+    return ReplyKeyboardMarkup([
+        ['Котик!', 'Заполнить анкету']
+    ])
 
 def get_smile(user_data): # функция присваивает пользователю случайный смайлик из списка и потом возвращает только его (до перезапуска бота)
     if 'emoji' not in user_data: # user_data это встроенный словарь с информацией о юзере, который обновляется при перезапуске бота
